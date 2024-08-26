@@ -1,0 +1,40 @@
+#
+# Serverless Framework Configuration File
+# 
+# このファイルは、Serverless Frameworkを使用してAWS上でサーバーレスアプリケーションをデプロイするための設定を記述しています。
+# ただし、ローカルPCのcronを利用する事で、MTGの通知する機能は実現できた為、
+# Lambda関数としてdeployする場合にのみ利用するファイルです。
+# 
+# LambdaとしてDeployする場合以下コマンドを実施
+# `npx serverless deploy`
+# ※上記コマンドは、AWSの認証情報が別途登録されている事が前提条件
+#
+# 詳細な説明:
+# - org: サービスを使用するためのServerless Frameworkの組織IDです。
+# - service: このプロジェクトの名前で、AWSリソース名にも使用されます。
+# - provider: AWSプロバイダーの設定。ランタイムやリージョンを指定します。
+# - functions: Lambda関数の定義とイベントトリガーの設定。
+
+# "org" ensures this Service is used with the correct Serverless Framework Access Key.
+org: 00083ns
+# "service" is the name of this project. This will also be added to your AWS resource names.
+service: mtgtNotif
+
+provider:
+  name: aws
+  runtime: nodejs20.x
+  region: ap-northeast-1
+  # stage: ${opt:stage, self:custom.defaultStage}
+
+functions:
+  mtgtNotif:
+    handler: src/mtgNotif.handler
+    events:
+      # 日本時間で月〜金のAM9:00
+      - schedule: cron(0 0 * * MON-FRI *)
+    # AWS Systems managerのパラメーターストアに登録している、環境変数  
+    environment:
+      SLACK_WEBHOOK_URL: ${ssm:UDEMY_AWS_LAMBDA_SLACK_WEBHOOK_URL}
+      GOOGLE_CLIENT_ID: ${ssm:GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${ssm:GOOGLE_CLIENT_SECRET}
+      ENCRYPT_GOOGLE_REFRESH_TOKEN: ${ssm:ENCRYPT_GOOGLE_REFRESH_TOKEN}
