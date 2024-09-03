@@ -1,17 +1,17 @@
 /**
  * ファイル名: mtgNotif.js
  * 
- * 概要: cronによる適期実行で、Googleカレンダーに登録されている予定を取得し、Slackに通知するプログラム 
+ * 概要: Googleカレンダーに登録されている予定を取得し、Slackに通知するプログラム 
  * 詳細:
  * 1. cronの定期実行により毎朝9時に実行される
- * 2. 毎朝9時に当日のMTG予定を取得する
+ * 2. 平日のAM8:40に当日のMTG予定を取得する
  * 3. 1で取得したMTGの開始2分前にcronによる再通知を実施する
  * ※ Slackへの通知は、SlackWebhookを利用して通知している
  * ※ GoogleカレンダーはOAuth2を利用して取得している
  * * 
  * 前提条件:
  * - SlackのWebhookURLを取得している
- * - OAuth2のID,SECRET,REFRESH_TOKENを取得している
+ * - OAuth2のID,SECRET,REFRESH_TOKENを取得し、
  * - GoogleカレンダーのIDを取得している
  * - 取得した情報を.envファイルに記述している
  * 
@@ -22,37 +22,24 @@
  */
 
 const { IncomingWebhook } = require('@slack/webhook');
+const { authorize } = require('./googleAuth.js'); // useApi.jsからauthorize関数をインポート
 const { google } = require('googleapis');
-const OAuth2 = google.auth.OAuth2;
 const dayjs = require('dayjs');
 const cron = require('node-cron');
-require('dotenv').config()
+require('dotenv').config();
 
 // SlackのWebhook URLを環境変数から取得
 const webhookUrl = process.env.SLACK_WEBHOOK_URL;
-// console.log(webhookUrl);
 const webhook = new IncomingWebhook(webhookUrl);
 
-async function toDayMtgNotif(event) {
+async function toDayMtgNotif() {
   try {
-    // OAuth2クライアントの設定
-    const oauth2Client = new OAuth2(
-      process.env.GOOGLE_CLIENT_ID,
-      process.env.GOOGLE_CLIENT_SECRET
-    );
+    // authorize関数を使ってOAuth2クライアントを取得
+    const auth = await authorize();
 
-    // console.log("oauth2Client", oauth2Client);
-
-    // アクセストークンの設定
-    oauth2Client.setCredentials({
-      refresh_token: process.env.ENCRYPT_GOOGLE_REFRESH_TOKEN
-    });
-
-    console.log(1);
     // Google Calendar APIのセットアップ
-    const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
+    const calendar = google.calendar({ version: 'v3', auth });
 
-    console.log(calendar);
     // 今日の日付を取得
     const today = new Date();
     const startOfDay = new Date(today.setHours(0, 0, 0, 0)).toISOString();
@@ -67,21 +54,6 @@ async function toDayMtgNotif(event) {
       orderBy: 'startTime',
     });
 
-    console.log(response);
-
-    // // カレンダーリストの取得
-    // const calendarListResponse = await calendar.calendarList.list();
-    // const calendarList = calendarListResponse.data.items;
-
-    // // Calendarリストをログに表示
-    // console.log("calendarList:", calendarList);
-
-    // // カレンダー ID をログに表示
-    // const calendarIds = calendarList.map(cal => cal.id);
-    // console.log("Calendar IDs:", calendarIds);
-
-
-    // 取得したイベント(Schedule)が配列担っているので、mapで必要情報だけをresultに格納
     const events = response.data.items;
     const result = events.map(event => ({
       summary: event.summary,
@@ -121,19 +93,15 @@ function scheduleReminder(events) {
     const cronTime = `${notifyTime.minute()} ${notifyTime.hour()} * * *`;
 
     cron.schedule(cronTime, () => {
-      // 非同期即時実行関数(IIFE)を使って、非同期処理をその場で実行
       (async function () {
         try {
-          // 非同期処理を行う（例: Slackへのメッセージ送信）
           await webhook.send({
             text: `"${event.summary}" が2分後に始まります`
           });
         } catch (error) {
-          // エラーが発生した場合の処理
           console.error(`Error sending notification for "${event.summary}":`, error);
         }
-      })(); // ();
-      ここで関数を定義すると同時に実行している
+      })();
     });
   });
 };
