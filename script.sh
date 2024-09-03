@@ -11,11 +11,8 @@
 # 更新日: 
 #
 
-# .env ファイルを読み込む
-export $(grep -v '^#' .env | xargs)
-
 # プロセスを停止(前日のプロセスをここで終了させる)
 kill $(ps aux | grep 'src/mtgNotif.js' | grep -v grep | awk '{print $2}')
 
 # mtgNotifをバックグラウンドで実行
-node /Users/00083ns/projects/NotifMTG/src/mtgNotif.js &
+node ~/projects/NotifMTG/src/mtgNotif.js &
