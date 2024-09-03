@@ -41,15 +41,18 @@ async function toDayMtgNotif(event) {
       process.env.GOOGLE_CLIENT_SECRET
     );
 
+    // console.log("oauth2Client", oauth2Client);
+
     // アクセストークンの設定
     oauth2Client.setCredentials({
       refresh_token: process.env.ENCRYPT_GOOGLE_REFRESH_TOKEN
     });
 
-
+    console.log(1);
     // Google Calendar APIのセットアップ
     const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
 
+    console.log(calendar);
     // 今日の日付を取得
     const today = new Date();
     const startOfDay = new Date(today.setHours(0, 0, 0, 0)).toISOString();
@@ -64,6 +67,7 @@ async function toDayMtgNotif(event) {
       orderBy: 'startTime',
     });
 
+    console.log(response);
 
     // // カレンダーリストの取得
     // const calendarListResponse = await calendar.calendarList.list();

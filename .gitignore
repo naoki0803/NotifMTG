@@ -131,3 +131,7 @@ dist
 
 # Other
 res.js
+
+
+token.json
+credentials.json
