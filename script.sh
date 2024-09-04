@@ -11,8 +11,31 @@
 # 更新日: 
 #
 
-# プロセスを停止(前日のプロセスをここで終了させる)
-kill $(ps aux | grep 'src/mtgNotif.js' | grep -v grep | awk '{print $2}')
+# .envファイルを読み込む
+export $(grep -v '^#' /Users/shiratorinaoki/projects/NotifMTG/.env | xargs)
+
+# 環境変数を設定
+export PATH=/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
+export HOME=/Users/shiratorinaoki
+
+# Slackが起動するまで待機する関数
+wait_for_slack() {
+  while ! pgrep -x "Slack" > /dev/null; do
+    echo "Waiting for Slack to start..."
+    sleep 5
+  done
+}
+
+# Slackの起動を待機
+wait_for_slack
+
+# プロセスを停止（前日のプロセスを終了）
+pid=$(ps aux | grep 'src/mtgNotif.js' | grep -v grep | awk '{print $2}')
+
+if [ -n "$pid" ]; then
+  kill "$pid"
+  echo "Stopped process: $pid"
+fi
 
 # mtgNotifをバックグラウンドで実行
-node ~/projects/NotifMTG/src/mtgNotif.js &
+/opt/homebrew/bin/node ~/projects/NotifMTG/src/mtgNotif.js &
