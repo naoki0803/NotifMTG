@@ -12,11 +12,9 @@
 #
 
 # .envファイルを読み込む
-export $(grep -v '^#' /Users/shiratorinaoki/projects/NotifMTG/.env | xargs)
-
-# 環境変数を設定
-export PATH=/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
-export HOME=/Users/shiratorinaoki
+set -a
+source ~/projects/NotifMTG/.env
+set +a
 
 # Slackが起動するまで待機する関数
 wait_for_slack() {
@@ -36,6 +34,8 @@ if [ -n "$pid" ]; then
   kill "$pid"
   echo "Stopped process: $pid"
 fi
+
+cd ~/projects/NotifMTG
 
 # mtgNotifをバックグラウンドで実行
 /opt/homebrew/bin/node ~/projects/NotifMTG/src/mtgNotif.js &
