@@ -68,17 +68,36 @@ async function authorize() {
   if (client) {
     return client;
   }
-  client = await authenticate({
-    scopes: SCOPES,
-    keyfilePath: CREDENTIALS_PATH,
-  });
-  if (client.credentials) {
-    await saveCredentials(client);
+  try {
+    client = await authenticate({
+      scopes: SCOPES,
+      keyfilePath: CREDENTIALS_PATH,
+    });
+    if (client.credentials) {
+      await saveCredentials(client);
+    }
+    return client;
+  } catch (error) {
+    throw new Error('AUTH_REQUIRED');
   }
-  return client;
 }
 
-// authorize関数をエクスポート
+/**
+ * 認証URLを生成する関数
+ *
+ * @return {string}
+ */
+function generateAuthUrl() {
+  const { client_id, client_secret, redirect_uris } = require(CREDENTIALS_PATH).web;
+  const oAuth2Client = new google.auth.OAuth2(client_id, client_secret, redirect_uris[0]);
+  return oAuth2Client.generateAuthUrl({
+    access_type: 'offline',
+    scope: SCOPES,
+  });
+}
+
+// authorize関数とgenerateAuthUrl関数をエクスポート
 module.exports = {
   authorize,
+  generateAuthUrl,
 };

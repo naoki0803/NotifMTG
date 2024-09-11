@@ -1,28 +1,5 @@
-/**
- * ファイル名: mtgNotif.js
- * 
- * 概要: Googleカレンダーに登録されている予定を取得し、Slackに通知するプログラム 
- * 詳細:
- * 1. cronの定期実行により毎朝9時に実行される
- * 2. 平日のAM8:40に当日のMTG予定を取得する
- * 3. 1で取得したMTGの開始2分前にcronによる再通知を実施する
- * ※ Slackへの通知は、SlackWebhookを利用して通知している
- * ※ GoogleカレンダーはOAuth2を利用して取得している
- * * 
- * 前提条件:
- * - SlackのWebhookURLを取得している
- * - OAuth2のID,SECRET,REFRESH_TOKENを取得し、
- * - GoogleカレンダーのIDを取得している
- * - 取得した情報を.envファイルに記述している
- * 
- * 作成者: 00083ns
- * 作成日: 2024/08/25
- * 更新者: 
- * 更新日: 
- */
-
 const { IncomingWebhook } = require('@slack/webhook');
-const { authorize } = require('./googleAuth.js'); // useApi.jsからauthorize関数をインポート
+const { authorize, generateAuthUrl } = require('./googleAuth.js');
 const { google } = require('googleapis');
 const dayjs = require('dayjs');
 const cron = require('node-cron');
@@ -77,9 +54,16 @@ async function toDayMtgNotif() {
     }
 
   } catch (error) {
-    await webhook.send({
-      text: `失敗しました: ${error}`
-    });
+    if (error.message === 'AUTH_REQUIRED') {
+      const authUrl = generateAuthUrl();
+      await webhook.send({
+        text: `Google認証が必要です。以下のURLにアクセスして認証を行ってください：\n${authUrl}`
+      });
+    } else {
+      await webhook.send({
+        text: `失敗しました: ${error}`
+      });
+    }
   }
 }
 
