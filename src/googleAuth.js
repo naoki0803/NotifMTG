@@ -18,6 +18,7 @@ const fs = require('fs').promises;
 const path = require('path');
 const { authenticate } = require('@google-cloud/local-auth');
 const { google } = require('googleapis');
+const { Console } = require('console');
 
 // スコープの設定
 const SCOPES = ['https://www.googleapis.com/auth/calendar.readonly'];
@@ -31,11 +32,15 @@ const CREDENTIALS_PATH = path.join(process.cwd(), 'credentials.json');
  */
 async function loadSavedCredentialsIfExist() {
   try {
+    // トークンファイルを読み込む
     const content = await fs.readFile(TOKEN_PATH);
+    // 読み込んだ内容をJSONとして解析
     const credentials = JSON.parse(content);
-    return google.auth.fromJSON(credentials);
+    // Googleの認証オブジェクトを生成
+    const res = google.auth.fromJSON(credentials);
+    return res; // 認証オブジェクトを返す
   } catch (err) {
-    return null;
+    return null; // エラーが発生した場合はnullを返す
   }
 }
 
@@ -46,6 +51,7 @@ async function loadSavedCredentialsIfExist() {
  * @return {Promise<void>}
  */
 async function saveCredentials(client) {
+  console.log('client', client);
   const content = await fs.readFile(CREDENTIALS_PATH);
   const keys = JSON.parse(content);
   const key = keys.installed || keys.web;
@@ -82,22 +88,7 @@ async function authorize() {
   }
 }
 
-/**
- * 認証URLを生成する関数
- *
- * @return {string}
- */
-function generateAuthUrl() {
-  const { client_id, client_secret, redirect_uris } = require(CREDENTIALS_PATH).web;
-  const oAuth2Client = new google.auth.OAuth2(client_id, client_secret, redirect_uris[0]);
-  return oAuth2Client.generateAuthUrl({
-    access_type: 'offline',
-    scope: SCOPES,
-  });
-}
-
 // authorize関数とgenerateAuthUrl関数をエクスポート
 module.exports = {
-  authorize,
-  generateAuthUrl,
+  authorize
 };

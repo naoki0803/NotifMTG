@@ -1,5 +1,47 @@
+/**
+ * ファイル名: mtgNotif.js
+ * 
+ * 概要: Googleカレンダーに登録されている予定を取得し、Slackに通知するプログラム 
+ * 詳細:
+ * 1. cronで設定した時刻に定期実行する
+ * 2. 平日の朝に当日のMTG予定を取得する
+ * 3. 1で取得したMTGの開始2分前にcronによる再通知を実施する
+ * ※ Slackへの通知は、SlackWebhookを利用して通知している
+ * ※ GoogleカレンダーはOAuth2を利用して取得している
+ * * 
+ * 前提条件:
+ * - SlackのWebhookURLを取得している
+ * - OAuth2認証に必要なcredentials.json
+ * 
+ * 
+ * 
+ * {
+  "web": {
+    "client_id": "",
+    "project_id": "",
+    "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+    "token_uri": "https://oauth2.googleapis.com/token",
+    "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+    "client_secret": "",
+    "redirect_uris": [
+      "http://localhost:3000/callback"
+    ]
+  }
+}
+
+
+
+ * - GoogleカレンダーのIDを取得している
+ * - 取得した情報を.envファイルに記述している
+ * 
+ * 作成者: 00083ns
+ * 作成日: 2024/08/25
+ * 更新者: 
+ * 更新日: 
+ */
+
 const { IncomingWebhook } = require('@slack/webhook');
-const { authorize, generateAuthUrl } = require('./googleAuth.js');
+const { authorize } = require('./googleAuth.js'); // useApi.jsからauthorize関数をインポート
 const { google } = require('googleapis');
 const dayjs = require('dayjs');
 const cron = require('node-cron');
@@ -54,16 +96,9 @@ async function toDayMtgNotif() {
     }
 
   } catch (error) {
-    if (error.message === 'AUTH_REQUIRED') {
-      const authUrl = generateAuthUrl();
-      await webhook.send({
-        text: `Google認証が必要です。以下のURLにアクセスして認証を行ってください：\n${authUrl}`
-      });
-    } else {
-      await webhook.send({
-        text: `失敗しました: ${error}`
-      });
-    }
+    await webhook.send({
+      text: `失敗しました: ${error}`
+    });
   }
 }
 
