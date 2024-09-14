@@ -16,13 +16,12 @@ set -a
 source ~/projects/NotifMTG/.env
 set +a
 
-# Slackが起動するまで待機する関数
-wait_for_slack() {
-  while ! pgrep -x "Slack" > /dev/null; do
-    echo "Waiting for Slack to start..."
-    sleep 5
-  done
-}
+# Slackが起動していない場合、Slackを起動
+if ! pgrep -x "Slack" > /dev/null; then
+  echo "Starting Slack..."
+  open -a "Slack"  # Slackを起動
+  sleep 5 # 完全に起動するまで少し待つ
+fi
 
 # Slackの起動を待機
 wait_for_slack
