@@ -16,6 +16,7 @@
 
 const fs = require('fs').promises;
 const path = require('path');
+const process = require('process');
 const { authenticate } = require('@google-cloud/local-auth');
 const { google } = require('googleapis');
 
@@ -50,9 +51,13 @@ async function loadSavedCredentialsIfExist() {
 * @return {Promise<void>}
 */
 async function saveCredentials(client) {
+  // credentials.jsonを読み込み
   const content = await fs.readFile(CREDENTIALS_PATH);
+  // 読み込んだ内容をJSONとして解析
   const keys = JSON.parse(content);
+  // 使用する認証情報を選択（インストールされたアプリの情報か、ウェブアプリの情報か）
   const key = keys.installed || keys.web;
+  // 保存するためのペイロードを作成
   const payload = JSON.stringify({
     type: 'authorized_user',
     /* eslint-disable camelcase */
@@ -61,6 +66,7 @@ async function saveCredentials(client) {
     refresh_token: client.credentials.refresh_token,
     /* eslint-enable camelcase */
   });
+  // ペイロードをトークンファイルに保存
   await fs.writeFile(TOKEN_PATH, payload);
 }
 
@@ -75,18 +81,14 @@ async function authorize() {
   if (client) {
     return client;
   }
-  try {
-    client = await authenticate({
-      scopes: SCOPES,
-      keyfilePath: CREDENTIALS_PATH,
-    });
-    if (client.credentials) {
-      await saveCredentials(client);
-    }
-    return client;
-  } catch {
-    throw new Error('AUTH_REQUIRED');
+  client = await authenticate({
+    scopes: SCOPES,
+    keyfilePath: CREDENTIALS_PATH,
+  });
+  if (client.credentials) {
+    await saveCredentials(client);
   }
+  return client;
 }
 
 // authorize関数とgenerateAuthUrl関数をエクスポート

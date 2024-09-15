@@ -4,7 +4,7 @@
 # 
 # 概要: crontabで登録した実行日時(平日のAM8:40に実行)に mtgNotif.js を実行する為のスクリプト
 # crontabの内容: 
-# 45 8 * * * /bin/zsh -c 'source /Users/shiratorinaoki/projects/NotifMTG/.env && /bin/zsh /Users/shiratorinaoki/projects/NotifMTG/script.sh' >> /Users/shiratorinaoki/projects/NotifMTG/logs/cron.log 2>&1
+# 45 8 * * * /bin/zsh -c 'source ~/projects/NotifMTG/script.sh' >> ~/projects/NotifMTG/logs/cron.log 2>&1
 #
 # 作成者: 00083ns
 # 作成日: 2024/08/25

@@ -10,29 +10,9 @@
  * ※ GoogleカレンダーはOAuth2を利用して取得している
  * * 
  * 前提条件:
- * - SlackのWebhookURLを取得している
- * - OAuth2認証に必要なcredentials.json
- * 
- * 
- * 
- * {
-  "web": {
-    "client_id": "",
-    "project_id": "",
-    "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-    "token_uri": "https://oauth2.googleapis.com/token",
-    "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-    "client_secret": "",
-    "redirect_uris": [
-      "http://localhost:3000/callback"
-    ]
-  }
-}
-
-
-
- * - GoogleカレンダーのIDを取得している
- * - 取得した情報を.envファイルに記述している
+ * - SlackのWebhookURLを取得し.envファイルに記述している
+ * - GoogleカレンダーのIDを取得し.envファイルに記述している
+ * - OAuth2認証に必要なcredentials.jsonの値が記述されている 
  * 
  * 作成者: 00083ns
  * 作成日: 2024/08/25
@@ -41,88 +21,168 @@
  */
 
 const { IncomingWebhook } = require('@slack/webhook');
-const { authorize } = require('./googleAuth.js'); // useApi.jsからauthorize関数をインポート
+const { authorize } = require('./googleAuth.js');
 const { google } = require('googleapis');
 const dayjs = require('dayjs');
 const cron = require('node-cron');
+
 require('dotenv').config();
 
 // SlackのWebhook URLを環境変数から取得
 const webhookUrl = process.env.SLACK_WEBHOOK_URL;
 const webhook = new IncomingWebhook(webhookUrl);
 
-async function toDayMtgNotif() {
+// async function toDayMtgNotif() {
+//   try {
+//     // googleAuth.jsからexportしたauthorize関数を使ってOAuth2クライアントを取得
+//     const auth = await authorize();
+
+//     // Google Calendar APIのセットアップ
+//     const calendar = google.calendar({ version: 'v3', auth });
+
+//     // 今日の日付を設定
+//     const today = new Date();
+//     const startOfDay = new Date(today.setHours(0, 0, 0, 0)).toISOString();
+//     const endOfDay = new Date(today.setHours(23, 59, 59, 999)).toISOString(); // eslint-disable-line no-magic-numbers
+
+//     // Google Calendar APIからイベント(Schedule)の取得
+//     const response = await calendar.events.list({
+//       calendarId: process.env.CALENDAR_ID,
+//       timeMin: startOfDay,
+//       timeMax: endOfDay,
+//       singleEvents: true,
+//       orderBy: 'startTime',
+//     });
+
+//     // イベント(Schedule)の整形
+//     const events = response.data.items;
+//     const result = events.map(event => ({
+//       summary: event.summary,
+//       dateTime: new Date(event.start.dateTime).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) // 日本時間に変換
+//     }));
+
+//     // result(Scheduleの内容)を整形して、Slackに通知
+//     if (result.length) {
+//       const formattedEvents = result.map(event => `\t･ ${event.dateTime} - ${event.summary}`).join('\n');
+//       await webhook.send({
+//         text: `【本日のMTG予定】\n${formattedEvents}`
+//       });
+
+//       // Reminderの設定
+//       scheduleReminder(result);
+
+//     } else {
+//       await webhook.send({
+//         text: '【本日のMTG予定】\n 本日MTGの予定はありません'
+//       });
+//     }
+
+//   } catch (error) {
+//     await webhook.send({
+//       text: `失敗しました: ${error}`
+//     });
+//   }
+// }
+
+// Google Calendar APIからイベント(Schedule)を取得する関数
+async function fetchTodayMtgSchedules() {
   try {
-    // authorize関数を使ってOAuth2クライアントを取得
+    // googleAuth.jsからexportしたauthorize関数を使ってOAuth2クライアントを取得
     const auth = await authorize();
 
     // Google Calendar APIのセットアップ
     const calendar = google.calendar({ version: 'v3', auth });
 
-    // 今日の日付を取得
+    // 今日の日付を設定
     const today = new Date();
     const startOfDay = new Date(today.setHours(0, 0, 0, 0)).toISOString();
-    const endOfDay = new Date(today.setHours(23, 59, 59, 999)).toISOString();
+    const endOfDay = new Date(today.setHours(23, 59, 59, 999)).toISOString(); // eslint-disable-line no-magic-numbers
 
-    // イベント(Schedule)の取得
+    // Google Calendar APIからイベント(Schedule)の取得
     const response = await calendar.events.list({
-      calendarId: process.env.ITECS_CALENDAR_ID,
+      calendarId: process.env.CALENDAR_ID,
       timeMin: startOfDay,
       timeMax: endOfDay,
       singleEvents: true,
       orderBy: 'startTime',
     });
 
+    // イベント(Schedule)の整形
     const events = response.data.items;
     const result = events.map(event => ({
       summary: event.summary,
       dateTime: new Date(event.start.dateTime).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) // 日本時間に変換
     }));
+    return result;
+  } catch (error) {
+    console.log(`スケジュールの取得に失敗しました: ${error}`);  // eslint-disable-line no-console
+    return [];
+  }
+}
 
+// Slackに通知する関数
+async function sendMtgNotification(events) {
+  try {
     // result(Scheduleの内容)を整形して、Slackに通知
-    if (result.length) {
-      const formattedEvents = result.map(event => `\t･ ${event.dateTime} - ${event.summary}`).join('\n');
+    if (events.length) {
+      const formattedEvents = events.map(event => `\t･ ${event.dateTime} - ${event.summary}`).join('\n');
       await webhook.send({
         text: `【本日のMTG予定】\n${formattedEvents}`
       });
 
       // Reminderの設定
-      scheduleReminder(result);
+      scheduleReminder(events);
 
     } else {
       await webhook.send({
-        text: `【本日のMTG予定】\n 本日MTGの予定はありません`
+        text: '【本日のMTG予定】\n 本日MTGの予定はありません'
       });
     }
-
   } catch (error) {
     await webhook.send({
-      text: `失敗しました: ${error}`
+      text: `通知送信中にエラーが発生しました: ${error}`
     });
   }
 }
 
-// 指定された会議の2分前に通知する関数
+// 指定された会議のn分前に通知する関数
 function scheduleReminder(events) {
   events.forEach(event => {
     const today = dayjs().format('YYYY-MM-DD'); // 今日の日付を取得
     const eventDateTime = `${today} ${event.dateTime}`; // 今日の日付に時間を結合
-    const eventTime = dayjs(eventDateTime, 'YYYY-MM-DD HH:mm');
-    const notifyTime = eventTime.subtract(2, 'minute');
-    const cronTime = `${notifyTime.minute()} ${notifyTime.hour()} * * *`;
+    const eventTime = dayjs(eventDateTime, 'YYYY-MM-DD HH:mm'); // 結果をdayjsオブジェクトに変換
+    const reminderMinutes = 2;  // 会議の何分前に通知するかを変数に格納
+    const notifyTime = eventTime.subtract(reminderMinutes, 'minute'); // 通知する時間を計算
+    const cronTime = `${notifyTime.minute()} ${notifyTime.hour()} * * *`; // cron時間を設定
 
     cron.schedule(cronTime, () => {
+      // 非同期即時実行関数(IIFE)を使って、非同期処理をその場で実行
       (async function () {
         try {
+          // 非同期処理を行う（例: Slackへのメッセージ送信）
           await webhook.send({
             text: `"${event.summary}" が2分後に始まります`
           });
-        } catch (error) {
-          console.error(`Error sending notification for "${event.summary}":`, error);
+        } catch {
+          await webhook.send({
+            text: `Reminder送信中にエラーが発生しました: "${event.summary}"`
+          });
         }
-      })();
+      })(); // ここで関数を定義すると同時に実行している
     });
   });
 };
+
+// toDayMtgNotif関数をリファクタリング
+async function toDayMtgNotif() {
+  try {
+    const events = await fetchTodayMtgSchedules();
+    await sendMtgNotification(events);
+  } catch (error) {
+    await webhook.send({
+      text: `toDayMtgNotifの実行に失敗しました: ${error}`
+    });
+  }
+}
 
 toDayMtgNotif();
