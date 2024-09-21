@@ -22,9 +22,8 @@ const { google } = require('googleapis');
 
 // スコープの設定
 const SCOPES = ['https://www.googleapis.com/auth/calendar.readonly'];
-const TOKEN_PATH = path.join(process.cwd(), 'token.json');
-const CREDENTIALS_PATH = path.join(process.cwd(), 'credentials.json');
-
+const TOKEN_PATH = path.join(process.cwd(), 'config', 'token.json');
+const CREDENTIALS_PATH = path.join(process.cwd(), 'config', 'credentials.json');
 /**
 * 保存された認証情報を読み込む関数
 *
