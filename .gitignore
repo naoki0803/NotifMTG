@@ -133,5 +133,6 @@ dist
 res.js
 
 
+NotifMTGRunner.app
 token.json
-credentials.json
+# credentials.json
