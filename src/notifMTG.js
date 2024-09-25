@@ -1,5 +1,5 @@
 /**
- * ファイル名: mtgNotif.js
+ * ファイル名: notifMTG.js.js
  * 
  * 概要: Googleカレンダーに登録されている予定を取得し、Slackに通知するプログラム 
  * 詳細:
@@ -32,58 +32,6 @@ require('dotenv').config();
 const webhookUrl = process.env.SLACK_WEBHOOK_URL;
 const webhook = new IncomingWebhook(webhookUrl);
 
-// async function toDayMtgNotif() {
-//   try {
-//     // googleAuth.jsからexportしたauthorize関数を使ってOAuth2クライアントを取得
-//     const auth = await authorize();
-
-//     // Google Calendar APIのセットアップ
-//     const calendar = google.calendar({ version: 'v3', auth });
-
-//     // 今日の日付を設定
-//     const today = new Date();
-//     const startOfDay = new Date(today.setHours(0, 0, 0, 0)).toISOString();
-//     const endOfDay = new Date(today.setHours(23, 59, 59, 999)).toISOString(); // eslint-disable-line no-magic-numbers
-
-//     // Google Calendar APIからイベント(Schedule)の取得
-//     const response = await calendar.events.list({
-//       calendarId: process.env.CALENDAR_ID,
-//       timeMin: startOfDay,
-//       timeMax: endOfDay,
-//       singleEvents: true,
-//       orderBy: 'startTime',
-//     });
-
-//     // イベント(Schedule)の整形
-//     const events = response.data.items;
-//     const result = events.map(event => ({
-//       summary: event.summary,
-//       dateTime: new Date(event.start.dateTime).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) // 日本時間に変換
-//     }));
-
-//     // result(Scheduleの内容)を整形して、Slackに通知
-//     if (result.length) {
-//       const formattedEvents = result.map(event => `\t･ ${event.dateTime} - ${event.summary}`).join('\n');
-//       await webhook.send({
-//         text: `【本日のMTG予定】\n${formattedEvents}`
-//       });
-
-//       // Reminderの設定
-//       scheduleReminder(result);
-
-//     } else {
-//       await webhook.send({
-//         text: '【本日のMTG予定】\n 本日MTGの予定はありません'
-//       });
-//     }
-
-//   } catch (error) {
-//     await webhook.send({
-//       text: `失敗しました: ${error}`
-//     });
-//   }
-// }
-
 // Google Calendar APIからイベント(Schedule)を取得する関数
 async function fetchTodayMtgSchedules() {
   try {
@@ -115,8 +63,11 @@ async function fetchTodayMtgSchedules() {
     }));
     return result;
   } catch (error) {
-    console.log(`スケジュールの取得に失敗しました: ${error}`);  // eslint-disable-line no-console
-    return [];
+    // console.log(`スケジュールの取得に失敗しました: ${error}`);  // eslint-disable-line no-console
+    await webhook.send({  // エラーメッセージをSlackに送信
+      text: `スケジュールの取得に失敗しました: ${error}`
+    });
+    return false;
   }
 }
 
@@ -177,6 +128,9 @@ function scheduleReminder(events) {
 async function toDayMtgNotif() {
   try {
     const events = await fetchTodayMtgSchedules();
+    if (!events) { // エラーが発生した場合は処理を終了
+      return; // 何も送信しない
+    }
     await sendMtgNotification(events);
   } catch (error) {
     await webhook.send({

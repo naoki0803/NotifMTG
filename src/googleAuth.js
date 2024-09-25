@@ -1,7 +1,7 @@
 /**
 * ファイル名: googleAuth.js
 
-* 概要: Calendar APIを使用するための認証処理を実装(以下クイックスタートのsampleと同一内容)
+* 概要: Calendar APIを使用するための認証処理を実装(以下クイックスタートのsampleがベース)
 *      https://developers.google.com/calendar/api/quickstart/nodejs?hl=ja
 * 詳細:
 *      1. 認証情報の読み込み: 保存された認証情報をファイルから読み込み、OAuth2クライアントを生成します。
@@ -22,8 +22,10 @@ const { google } = require('googleapis');
 
 // スコープの設定
 const SCOPES = ['https://www.googleapis.com/auth/calendar.readonly'];
+// Pathの設定
 const TOKEN_PATH = path.join(process.cwd(), 'config', 'token.json');
 const CREDENTIALS_PATH = path.join(process.cwd(), 'config', 'credentials.json');
+
 /**
 * 保存された認証情報を読み込む関数
 *
@@ -68,7 +70,6 @@ async function saveCredentials(client) {
   // ペイロードをトークンファイルに保存
   await fs.writeFile(TOKEN_PATH, payload);
 }
-
 
 /**
 * APIを呼び出すための認証を行う関数
