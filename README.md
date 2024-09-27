@@ -4,6 +4,8 @@
 
 このプロジェクトは、Google Calendar に登録されているミーティング（MTG）予定を自動的に取得し、Slack に通知するシステムです。当日の MTG 予定を通知し、さらに各 MTG の開始 2 分前に個別の通知を行います。
 
+詳細はZennをご確認ください。
+
 ## 主な機能
 
 1. Google Calendar からの当日の MTG 予定取得
@@ -38,31 +40,13 @@
 
 5. Slack で新しい Webhook を作成する
 
-6. .env ファイルを作成し、以下の環境変数を設定する
-
+6. .env ファイルを更新する
     ```
     SLACK_WEBHOOK_URL=あなたのSlack Webhook URL
     ITECS_CALENDAR_ID=あなたのGoogle CalendarのID
     ```
 
-7. credentials.json を編集し、以下の情報を設定する
-
-    ```json
-    {
-      "web": {
-        "client_id": "あなたのクライアントID",
-        "project_id": "あなたのプロジェクトID",
-        "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-        "token_uri": "https://oauth2.googleapis.com/token",
-        "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-        "client_secret": "あなたのクライアントシークレット",
-        "redirect_uris": [
-          "http://localhost:3000/callback"
-        ]
-      }
-    }
-    ```
-8. 初回実行時に認証を行う
+7. 初回実行時に認証を行う
     ```
     node mtgNotif.js
     ```
@@ -76,7 +60,7 @@
 0 9 * * 1-5 /usr/bin/node /path/to/your/project/mtgNotif.js
 ```
 
-これにより、平日の朝 9 時に自動実行されます。
+これにより、月〜金の朝 9 時に自動実行されます。
 
 ## 注意事項
 
