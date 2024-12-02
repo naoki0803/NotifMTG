@@ -1,25 +1,25 @@
 {
-  "name": "lambdanotifmtg",
-  "version": "1.0.0",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
-  "dependencies": {
-    "@google-cloud/local-auth": "^2.1.0",
-    "@slack/webhook": "^7.0.3",
-    "dayjs": "^1.11.13",
-    "dotenv": "^16.4.5",
-    "googleapis": "^105.0.0",
-    "node-cron": "^3.0.3"
-  },
-  "devDependencies": {
-    "@eslint/js": "^9.10.0",
-    "eslint": "^9.10.0",
-    "globals": "^15.9.0"
-  }
+    "name": "lambdanotifmtg",
+    "version": "1.0.0",
+    "main": "index.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "description": "",
+    "dependencies": {
+        "@google-cloud/local-auth": "^2.1.0",
+        "@slack/webhook": "^7.0.3",
+        "dayjs": "^1.11.13",
+        "dotenv": "^16.4.5",
+        "googleapis": "^105.0.0",
+        "node-cron": "^3.0.3"
+    },
+    "devDependencies": {
+        "@eslint/js": "^9.10.0",
+        "eslint": "^9.10.0",
+        "globals": "^15.9.0"
+    }
 }

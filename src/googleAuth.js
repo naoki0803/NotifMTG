@@ -32,17 +32,17 @@ const CREDENTIALS_PATH = path.join(process.cwd(), 'config', 'credentials.json');
 * @return {Promise<OAuth2Client|null>}
 */
 async function loadSavedCredentialsIfExist() {
-  try {
-    // トークンファイルを読み込む
-    const content = await fs.readFile(TOKEN_PATH);
-    // 読み込んだ内容をJSONとして解析
-    const credentials = JSON.parse(content);
-    // Googleの認証オブジェクトを生成
-    const res = google.auth.fromJSON(credentials);
-    return res; // 認証オブジェクトを返す
-  } catch {
-    return null; // エラーが発生した場合はnullを返す
-  }
+    try {
+        // トークンファイルを読み込む
+        const content = await fs.readFile(TOKEN_PATH);
+        // 読み込んだ内容をJSONとして解析
+        const credentials = JSON.parse(content);
+        // Googleの認証オブジェクトを生成
+        const res = google.auth.fromJSON(credentials);
+        return res; // 認証オブジェクトを返す
+    } catch {
+        return null; // エラーが発生した場合はnullを返す
+    }
 }
 
 /**
@@ -52,23 +52,23 @@ async function loadSavedCredentialsIfExist() {
 * @return {Promise<void>}
 */
 async function saveCredentials(client) {
-  // credentials.jsonを読み込み
-  const content = await fs.readFile(CREDENTIALS_PATH);
-  // 読み込んだ内容をJSONとして解析
-  const keys = JSON.parse(content);
-  // 使用する認証情報を選択（インストールされたアプリの情報か、ウェブアプリの情報か）
-  const key = keys.installed || keys.web;
-  // 保存するためのペイロードを作成
-  const payload = JSON.stringify({
-    type: 'authorized_user',
-    /* eslint-disable camelcase */
-    client_id: key.client_id,
-    client_secret: key.client_secret,
-    refresh_token: client.credentials.refresh_token,
-    /* eslint-enable camelcase */
-  });
-  // ペイロードをトークンファイルに保存
-  await fs.writeFile(TOKEN_PATH, payload);
+    // credentials.jsonを読み込み
+    const content = await fs.readFile(CREDENTIALS_PATH);
+    // 読み込んだ内容をJSONとして解析
+    const keys = JSON.parse(content);
+    // 使用する認証情報を選択（インストールされたアプリの情報か、ウェブアプリの情報か）
+    const key = keys.installed || keys.web;
+    // 保存するためのペイロードを作成
+    const payload = JSON.stringify({
+        type: 'authorized_user',
+        /* eslint-disable camelcase */
+        client_id: key.client_id,
+        client_secret: key.client_secret,
+        refresh_token: client.credentials.refresh_token,
+        /* eslint-enable camelcase */
+    });
+    // ペイロードをトークンファイルに保存
+    await fs.writeFile(TOKEN_PATH, payload);
 }
 
 /**
@@ -77,21 +77,21 @@ async function saveCredentials(client) {
 * @return {Promise<OAuth2Client>}
 */
 async function authorize() {
-  let client = await loadSavedCredentialsIfExist();
-  if (client) {
+    let client = await loadSavedCredentialsIfExist();
+    if (client) {
+        return client;
+    }
+    client = await authenticate({
+        scopes: SCOPES,
+        keyfilePath: CREDENTIALS_PATH,
+    });
+    if (client.credentials) {
+        await saveCredentials(client);
+    }
     return client;
-  }
-  client = await authenticate({
-    scopes: SCOPES,
-    keyfilePath: CREDENTIALS_PATH,
-  });
-  if (client.credentials) {
-    await saveCredentials(client);
-  }
-  return client;
 }
 
 // authorize関数とgenerateAuthUrl関数をエクスポート
 module.exports = {
-  authorize
+    authorize
 };
