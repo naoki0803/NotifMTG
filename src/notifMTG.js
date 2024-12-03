@@ -112,7 +112,7 @@ function scheduleReminder(events) {
                 try {
                     // 非同期処理を行う（例: Slackへのメッセージ送信）
                     await webhook.send({
-                        text: `"${event.summary}" が2分後に始まります`
+                        text: `"${event.summary}" が2分後に始まります \n ${event.URL}`
                     });
                 } catch {
                     await webhook.send({
